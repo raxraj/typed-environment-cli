@@ -1,39 +1,50 @@
 import * as fs from 'fs';
-import { parseEnvFile, scanSourceForEnvVars, generateEnvExample, writeFile } from '../utils/env-parser';
+import { loadSchemaFile } from '../utils/schema-loader';
+import { parseEnvFile, generateEnvExampleFromSchema, analyzeEnvironmentVariables, writeFile } from '../utils/schema-generator';
 
 interface SyncExampleOptions {
   env: string;
   output: string;
-  source: string;
+  schema?: string;
 }
 
 export async function syncExample(options: SyncExampleOptions): Promise<void> {
-  console.log('🔍 Scanning for environment variables...');
+  console.log('🔍 Loading environment schema...');
   
   try {
+    // Load schema file
+    const { schema, filePath: schemaPath } = await loadSchemaFile(options.schema);
+    console.log(`📋 Loaded schema from ${schemaPath}`);
+    console.log(`🔧 Found ${Object.keys(schema).length} variables in schema`);
+    
     // Parse existing .env file
     const envVars = parseEnvFile(options.env);
-    console.log(`📄 Found ${envVars.size} variables in ${options.env}`);
+    const envExists = fs.existsSync(options.env);
     
-    // Scan source code for environment variable usage
-    const codeVars = scanSourceForEnvVars(options.source);
-    console.log(`💻 Found ${codeVars.size} variables in source code`);
+    if (envExists) {
+      console.log(`📄 Found ${envVars.size} variables in ${options.env}`);
+    } else {
+      console.log(`📄 No ${options.env} file found - will show all schema variables`);
+    }
     
-    // Find missing and unused variables
-    const missingVars = new Set([...codeVars].filter(key => !envVars.has(key)));
-    const unusedVars = new Set([...envVars.keys()].filter(key => !codeVars.has(key)));
+    // Analyze environment variables against schema
+    const analysis = analyzeEnvironmentVariables(schema, envVars);
     
     // Report findings
-    if (missingVars.size > 0) {
-      console.log(`⚠️  Missing variables in ${options.env}:`, Array.from(missingVars).join(', '));
+    if (analysis.missing.length > 0) {
+      console.log(`⚠️  Missing required variables in ${options.env}:`, analysis.missing.join(', '));
     }
     
-    if (unusedVars.size > 0) {
-      console.log(`📝 Unused variables in ${options.env}:`, Array.from(unusedVars).join(', '));
+    if (analysis.extra.length > 0) {
+      console.log(`📝 Extra variables not in schema:`, analysis.extra.join(', '));
     }
     
-    // Generate .env.example content
-    const exampleContent = generateEnvExample(envVars, codeVars);
+    if (analysis.present.length > 0) {
+      console.log(`✅ Variables correctly set:`, analysis.present.join(', '));
+    }
+    
+    // Generate .env.example content from schema
+    const exampleContent = generateEnvExampleFromSchema(schema, envVars);
     
     // Check if .env.example already exists
     const outputExists = fs.existsSync(options.output);
@@ -48,14 +59,23 @@ export async function syncExample(options: SyncExampleOptions): Promise<void> {
     }
     
     // Summary
-    const totalVars = new Set([...envVars.keys(), ...codeVars]).size;
-    console.log(`📊 Summary: ${totalVars} total variables processed`);
+    console.log(`📊 Summary: ${analysis.total} variables defined in schema`);
     
-    if (missingVars.size > 0) {
-      console.log(`   - ${missingVars.size} missing from .env`);
+    if (analysis.missing.length > 0) {
+      console.log(`   - ${analysis.missing.length} required variables missing from ${options.env}`);
     }
-    if (unusedVars.size > 0) {
-      console.log(`   - ${unusedVars.size} unused in code`);
+    if (analysis.extra.length > 0) {
+      console.log(`   - ${analysis.extra.length} extra variables not in schema`);
+    }
+    if (analysis.present.length > 0) {
+      console.log(`   - ${analysis.present.length} variables properly configured`);
+    }
+    
+    console.log(`\n💡 Next steps:`);
+    console.log(`   1. Copy ${options.output} to ${options.env}`);
+    console.log(`   2. Fill in the required values`);
+    if (analysis.missing.length > 0) {
+      console.log(`   3. Add missing required variables: ${analysis.missing.join(', ')}`);
     }
     
   } catch (error) {
