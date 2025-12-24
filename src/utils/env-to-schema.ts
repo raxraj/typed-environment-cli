@@ -1,5 +1,8 @@
 import { EnvSchema } from 'typed-environment/dist/types';
 
+// Constants
+const DEFAULT_SECRET_MIN_LENGTH = 32;
+
 /**
  * Infer the type of an environment variable value
  */
@@ -44,7 +47,7 @@ function detectPatterns(key: string, value: string): { pattern?: RegExp; minLeng
   
   // Secret/key length requirements
   if ((key.includes('SECRET') || key.includes('KEY') || key.includes('TOKEN')) && value.length >= 16) {
-    result.minLength = Math.min(value.length, 32); // Suggest minimum length
+    result.minLength = Math.min(value.length, DEFAULT_SECRET_MIN_LENGTH); // Suggest minimum length
   }
   
   return result;
@@ -106,6 +109,8 @@ export function generateSchemaFromEnv(envVars: Map<string, string>): EnvSchema {
   
   for (const [key, value] of envVars.entries()) {
     const type = inferType(value);
+    // Using 'any' here because typed-environment's BaseField types are too strict
+    // for dynamic schema generation with conditional properties
     const fieldDef: any = {
       type,
       required: true, // Assume all existing vars are required by default
@@ -162,7 +167,9 @@ export function generateSchemaFileContent(schema: EnvSchema): string {
   
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    const fieldDef = schema[key] as any; // Use any to access all possible properties
+    // Using 'any' here because typed-environment's BaseField types are too strict
+    // for accessing all possible properties dynamically
+    const fieldDef = schema[key] as any;
     
     lines.push(`  ${key}: {`);
     lines.push(`    type: '${fieldDef.type}',`);

@@ -17,8 +17,9 @@ export async function generateSchema(options: GenerateSchemaOptions): Promise<vo
     // Determine the output file path
     const outputPath = options.output || path.join(process.cwd(), 'schema.env.js');
     
-    // Check if output file already exists
-    if (fs.existsSync(outputPath) && !options.force) {
+    // Check if output file already exists (before writing)
+    const fileExistedBefore = fs.existsSync(outputPath);
+    if (fileExistedBefore && !options.force) {
       console.log(`❌ Schema file already exists: ${outputPath}`);
       console.log(`   Use --force to overwrite the existing schema file`);
       process.exit(1);
@@ -68,7 +69,7 @@ export async function generateSchema(options: GenerateSchemaOptions): Promise<vo
     
     fs.writeFileSync(outputPath, schemaContent, 'utf-8');
     
-    if (fs.existsSync(outputPath) && options.force) {
+    if (fileExistedBefore && options.force) {
       console.log(`✅ Schema file updated: ${outputPath}`);
     } else {
       console.log(`✅ Schema file created: ${outputPath}`);
