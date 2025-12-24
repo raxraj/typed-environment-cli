@@ -5,6 +5,7 @@ A CLI tool for managing environment variables with the `typed-environment` packa
 ## Features
 
 - 🔒 **Schema-based Configuration**: Define environment variables using `typed-environment` schemas
+- ⚡ **Auto-generate Schema**: Create a schema file from your existing `.env` file
 - 🔄 **Auto-sync .env.example**: Generate or update `.env.example` based on your schema definition
 - 🔍 **Environment Validation**: Validate `.env` files against your schema with detailed error reporting
 - 📝 **Type Safety**: Full TypeScript support with type checking and validation
@@ -20,6 +21,29 @@ npm install -g typed-environment-cli
 ```
 
 ## Quick Start
+
+### Option 1: Generate Schema from Existing .env
+
+If you already have a `.env` file:
+
+1. **Generate a schema from your .env**:
+```bash
+npx typed-environment generate-schema
+```
+
+2. **Review and customize the generated schema** (`schema.env.js`)
+
+3. **Generate .env.example**:
+```bash
+npx typed-environment sync-example
+```
+
+4. **Validate your .env**:
+```bash
+npx typed-environment check
+```
+
+### Option 2: Create Schema Manually
 
 1. **Create a schema file** (`schema.env.js` or `schema.env.ts`):
 
@@ -66,7 +90,33 @@ npx typed-environment check
 
 ## Usage
 
+### Generate Schema from .env
+
+Generate a `schema.env.js` file from an existing `.env` file:
+
+```bash
+npx typed-environment generate-schema
+```
+
+Options:
+- `-e, --env <file>`: Environment file to generate schema from (default: `.env`)
+- `-o, --output <file>`: Output schema file path (default: `schema.env.js`)
+- `-f, --force`: Overwrite existing schema file
+
+Example:
+```bash
+npx typed-environment generate-schema --env .env.production --output custom.schema.js
+```
+
+The command will:
+- ✅ Detect types automatically (string, number, boolean)
+- ✅ Infer patterns for URLs, emails, and common formats
+- ✅ Set up constraints (min/max for numbers, minLength for secrets)
+- ✅ Detect choices for enum-like values (NODE_ENV, LOG_LEVEL)
+- ✅ Provide a ready-to-use schema with sensible defaults
+
 ### Sync .env.example
+
 
 Generate or update a `.env.example` file based on your schema:
 
@@ -102,6 +152,65 @@ npx typed-environment check --env .env.development --schema custom.schema.js
 ```
 
 ## Example Output
+
+### generate-schema command:
+```
+🔍 Checking for existing schema and .env files...
+📄 Reading environment variables from .env...
+✅ Found 10 variables in .env
+🔧 Generating schema from environment variables...
+✅ Schema file created: schema.env.js
+
+📊 Summary:
+   - 10 environment variables processed
+   - Schema file: schema.env.js
+
+📈 Variable types:
+   - 6 string variables
+   - 3 number variables
+   - 1 boolean variables
+
+💡 Next steps:
+   1. Review and customize schema.env.js
+   2. Run 'npx typed-environment check' to validate your .env
+   3. Run 'npx typed-environment sync-example' to generate .env.example
+```
+
+### Generated schema.env.js:
+```javascript
+module.exports = {
+  API_KEY: {
+    type: 'string',
+    required: true,
+    minLength: 32,
+  },
+  DATABASE_URL: {
+    type: 'string',
+    required: true,
+    pattern: /^postgres(ql)?:\/\/.+/,
+  },
+  DEBUG: {
+    type: 'boolean',
+    required: true,
+  },
+  EMAIL: {
+    type: 'string',
+    required: true,
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  },
+  NODE_ENV: {
+    type: 'string',
+    required: true,
+    choices: ['development', 'staging', 'production'],
+  },
+  PORT: {
+    type: 'number',
+    required: true,
+    min: 1,
+    max: 65535,
+  },
+};
+```
 
 ### sync-example command:
 ```

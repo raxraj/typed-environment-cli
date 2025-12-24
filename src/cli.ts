@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { syncExample } from './commands/sync-example';
 import { check } from './commands/check';
+import { generateSchema } from './commands/generate-schema';
 
 const program = new Command();
 
@@ -24,5 +25,13 @@ program
   .option('-e, --env <file>', 'Environment file to check', '.env')
   .option('-s, --schema <file>', 'Schema file path (auto-detected if not provided)')
   .action(check);
+
+program
+  .command('generate-schema')
+  .description('Generate schema.env.js from existing .env file')
+  .option('-e, --env <file>', 'Environment file to generate schema from', '.env')
+  .option('-o, --output <file>', 'Output schema file path', 'schema.env.js')
+  .option('-f, --force', 'Overwrite existing schema file', false)
+  .action(generateSchema);
 
 program.parse(process.argv);
