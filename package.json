@@ -1,0 +1,36 @@
+{
+  "name": "typed-environment-cli",
+  "bin": {
+    "tenv": "dist/index.js"
+  },
+  "version": "0.0.1",
+  "description": "CLI tool for managing environment variables with typed-environment schemas",
+  "homepage": "https://github.com/raxraj/typed-environment-cli#readme",
+  "bugs": {
+    "url": "https://github.com/raxraj/typed-environment-cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raxraj/typed-environment-cli.git"
+  },
+  "license": "ISC",
+  "author": "raxraj",
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "typed-environment": "^0.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "typescript": "^5.9.3"
+  }
+}
